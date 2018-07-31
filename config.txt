@@ -1,0 +1,22 @@
+#general parameters
+RAW_DATA_PATH = /project/zhanghm/B-ALL_and_T-ALL/small_RNA/data/
+RESULT_PATH = /project/zhanghm/B-ALL_and_T-ALL/small_RNA/result/new/
+FORMAT	= 2
+SAMPLE_LIST =/project/zhanghm/B-ALL_and_T-ALL/small_RNA/result/sample.list
+
+#genome mapping step parameters
+GENOME_REFERENCE_FILE = /usr/local/src/biosoft/pipelines/miRNA-pipeline/data/hsa_genome.fa
+MASK_GENOME = /usr/local/src/biosoft/pipelines/miRNA-pipeline/data/hsa_genome_mask.fa
+
+#non-coding rna mapping step parameters
+NO_MIRNA_REFERENCE_FILE = /usr/local/src/biosoft/pipelines/miRNA-pipeline/data/Homo_sapiens_smrna_for_pipeline
+NO_MIRNA_REFERENCE_LENGTH_FILE = /usr/local/src/biosoft/pipelines/miRNA-pipeline/data/Homo_sapiens_smrna_for_pipeline.length
+
+#miRNA info for miRExpress;
+MAT_MIRNA = /usr/local/src/biosoft/pipelines/miRNA-pipeline/data/hsa_miRNA.txt
+PRE_MIRNA = /usr/local/src/biosoft/pipelines/miRNA-pipeline/data/hsa_precursor.txt
+
+#compare list for differential expression analysis
+COMPARE_LIST= WGC002271,WGC002133;WGC002133,WGC002134;WGC002134,WGC002135;WGC002135,WGC002272;WGC002271,WGC002272;
+#PTAH
+PERL_PATH = /usr/local/src/biosoft/pipelines/miRNA-pipeline/scripts/

@@ -1,0 +1,115 @@
+#!/usr/bin/perl -w
+#Filename:
+#Author: Gong Jing
+#Email: gongjing@smail.hust.edu.cn
+#Date: 2011/12/20; edited by liaoyf 2012/9/14
+#Modified: 
+#Description: get miRNA expression from next generation sequencing data.
+my $version=1.00;
+
+#use strict;
+use Getopt::Long;
+use File::Basename;
+
+if(@ARGV!=1){
+	print "USAGE: perl \$0 config.properties\n";
+}
+my ($infile)=@ARGV;
+my (%opt, $outdir, @sample);
+
+open (OPT,"<$infile") or die "cannot open config.properties\n";
+while(<OPT>){
+	chomp;
+
+	if(/RAW_Data_PATH\s*=\s*(\S+)/)      {  $opt{'input'}=$1;}
+	if(/SAMPLE_LIST\s*=\s*(\S+)/)		 {  $opt{'sample'}=$1;}
+	if(/GENOME_REFERENCE_FILE\s*=\s*(\S+)/) {  $opt{'genome_ref'}=$1;}
+	if(/NO_MIRNA_REFERENCE_FILE\s*=\s*(\S+)/) { $opt{'nomirna'}=$1;}
+	if(/NO_MIRNA_REFERENCE_LENGTH_FILE\s*=\s*(\S+)/) { $opt{'nomirna_len'}=$1;}
+
+	#miRNA info;
+	if(/MAT_MIRNA\s*=\s*(\S+)/)            { $opt{'mat_txt'}=$1; }
+	if(/PRE_MIRNA\s*=\s*(\S+)/)            { $opt{'pre_txt'}=$1; }
+
+	#target prediction step parameters
+	if(/UTR3_SEQUENCE_FILE\s*=\s*(\S+)/)   { $opt{'utr'}=$1;}
+
+	#path;
+	if(/PERL_PATH\s*=\s*(\S+)/)            { $opt{'perl'}=$1;}
+	if(/MIREXPRESS_PATH\s*=\s*(\S+)/) 	   { $opt{'mirexpress'}=$1;}
+}
+close OPT;
+
+###put sample list into @sample
+open(IN, "<$opt{'sample'}") || die $!;
+@sample = <IN>;
+close IN;
+
+for(my $i=0; $i<=$#sample; $i++){
+	chomp $sample[$i];
+	$outdir[$i]=$opt{'input'}.$sample[$i]."/";
+	
+	########step 1;
+	my	$outdir1=$outdir[$i]."genomemapping_pipeline2/";
+	mkdir $outdir1;
+	my	$samfile=$outdir1."sequence.sam";
+	my	$saifile=$outdir1."sequence.sai";
+		open OUT,">$samfile";
+		open OUT2, ">$saifile";
+		close OUT;
+		close OUT2;
+	`perl $opt{'perl'}"genomapping_mis1.pl" -s $opt{'perl'} -sam $samfile -sai $saifile -genome $opt{'genome_ref'}  -queryseq $opt{'input'}$sample[$i]"/$sample[$i].fastq.trim"  -queue t `;
+	
+	########step 2;
+	my $outdir2=$outdir[$i]."ncrnamapping_pipeline2/";
+	mkdir $outdir2;
+	$opt{'bp'}=$outdir1."alignedTogenome.blastparsed";
+	$opt{'fa'}=$outdir1."alignedTogenome.fa";
+	`perl $opt{'perl'}"alignToNo_micRNA.pl" -s $opt{'perl'} -bp $opt{'bp'} -bf $opt{'fa'} -o $outdir2 -nomiRNA $opt{'nomirna'} -lf $opt{'nomirna_len'} -queue t`;
+
+	########step 3;
+	my $outdir3=$outdir[$i]."miREXpress_pipeline2/";
+	mkdir $outdir3;
+		open(IN, "<$outdir2"."mirna_candidate.fa");
+		open(OUT,">$outdir2"."mirna_candidate.txt");
+		while (my $aline=<IN>){
+			chomp $aline;
+			if($aline=~/>.*_x(\d+)/){
+				print OUT "$1\t";
+			}
+			else{
+				print OUT "$aline\n";
+			}															
+		}
+		close IN;
+		close OUT;
+
+	`$opt{'mirexpress'}"alignmentSIMD" 	-r $opt{'pre_txt'} -i $outdir2"mirna_candidate.txt" -t 0.95 -u 10 -o $outdir3`; 
+	`$opt{'mirexpress'}"analysis" -r  $opt{'pre_txt'}  -m $opt{'mat_txt'} -d $outdir3 -o Example_alignment_result -t Example_expression_profile`;
+  	
+		####### step 6;
+#		my $outdir6 = $outdir[$i]."target/";
+#		mkdir $outdir6;
+#		`perl $opt{'perl'}"target_predict_edit.pl" -script $opt{'perl'} -i $outdir4"Example_expression_profile" -m $opt{'mat_txt'} -u $opt{'utr'}  -o $outdir6 `; 
+}
+
+		sub count_hash{
+			 $file=shift;
+			 $sample=shift;
+			 $total{$sample}=0;
+			open(IN,"<$file") or die "cannot open $files[0]\n";
+			             
+			              while(<IN>){
+				                 chomp;
+				                  if(/>.*_x(\d+)/){
+					                my  $num=$1;
+					                  my  $seq=<IN>;
+					                  chomp($seq);      
+					                  $$sample{$seq}=$num;
+					              $total{$sample}=$total{$sample}+$num;
+					              }
+				             }
+			            close IN;
+				
+			
+					}
